@@ -110,13 +110,14 @@ export const FormHome: React.FC = () => {
                 const titleData = {...title[index]}
                 titleData[event.target.name] = event.target.value;
                 title[index] = titleData
-
                 break;
             // case 'mainimage':
             //     data.homeSection[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
             //     break;
             case 'worksection':
-                data.functionality[index][event.target.name] = event.target.value;
+                const functionalityData = {...functionality[index]}
+                functionalityData[event.target.name] = event.target.value;
+                functionality[index] = functionalityData
                 break;
             case 'workimage':
                 const file = event.target.files[0];
@@ -130,12 +131,13 @@ export const FormHome: React.FC = () => {
                   obj[event.target.name] = arrayBuffer;
                   functionality[index] = obj
                   setMainSection({...data, functionality, testimonials });
-
                 };
               
                 break;
             case 'Testimonials':
-                data.testimonials[index][event.target.name] = event.target.value;
+                const testimonialsData = {...testimonials[index]}
+                testimonialsData[event.target.name] = event.target.value;
+                testimonials[index] = testimonialsData
                 break;
             case 'testimonialimage':
                 const file1 = event.target.files[0];
@@ -149,14 +151,12 @@ export const FormHome: React.FC = () => {
                   obj[event.target.name] = arrayBuffer;
                   testimonials[index] = obj
                   setMainSection({...data, functionality, testimonials });
-
                 };
-     
                 break;
             default:
                 break;
         }
-        console.log({...data, functionality, testimonials })
+     
         setMainSection({...data, title, functionality, testimonials });
     }
 
