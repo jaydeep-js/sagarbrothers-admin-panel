@@ -29,6 +29,7 @@ const GET_VIEWER = gql`query{
 const CREATE_LINK_MUTATION = gql`
 mutation AddHome($input: HomeInput) {
     addHome(input: $input) {
+      _id
       title {
         year
         maintitle
@@ -96,6 +97,8 @@ export const FormHome: React.FC = () => {
     };
 
     const [mainSection, setMainSection] = React.useState(initialstate);
+    const [isRequired, setIsRequired] = React.useState(true);
+    const [isNewItem, setIsNewItem] = React.useState(true);
 
     const handleInput = (index: any, event, name) => {
         let data = { ...mainSection };
@@ -186,12 +189,13 @@ export const FormHome: React.FC = () => {
                 break;
         }
     }
-    const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+    const [createLink, { loading: submitLoading }] = useMutation(CREATE_LINK_MUTATION, {
         variables: {
             "input": inputData
         },
+        fetchPolicy: 'no-cache'
     });
-    const { loading, data } = useQuery(GET_VIEWER)
+    let { loading, data } = useQuery(GET_VIEWER)
     
     const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
         variables: {
@@ -201,6 +205,10 @@ export const FormHome: React.FC = () => {
     });
 
     useEffect(() => {
+        if (mainSection && mainSection._id) {
+            setIsRequired(false)
+            setIsNewItem(false)
+        } 
         if (data && data.getHome && data.getHome.length) {
                 setMainSection(
                     {
@@ -214,9 +222,9 @@ export const FormHome: React.FC = () => {
                             ...data.getHome[0].functionality
                         ],
                         _id: data.getHome[0]._id
-                    })
+                })
         }
-    }, [loading]);
+    }, [loading, mainSection._id, submitLoading]);
 
     return (
         <div className="card">
@@ -224,10 +232,14 @@ export const FormHome: React.FC = () => {
                 <h4 className="card-title">Home page</h4>
                 <form className="mt-4" onSubmit={(e) => {
                     e.preventDefault();
-                    if (mainSection && mainSection._id) {
-                        updateLink();
+                    if (isNewItem) {
+                        createLink().then(({data})=>{
+                            if (data && data.addHome) {
+                                setMainSection({...mainSection, _id: data.addHome._id })
+                            }
+                        });
                     } else {
-                        createLink();
+                        updateLink();
                     }
                 }}>
                     <strong>Main Section</strong>
@@ -309,7 +321,7 @@ export const FormHome: React.FC = () => {
                                     <div className="form-group">
                                         {index === 0 ? <label>icon</label> : null}
                                         <div className="custom-file">
-                                            <input type="file" className="custom-file-input" name="image" onChange={event => handleInput(index, event, 'workimage')} required />
+                                            <input type="file" className="custom-file-input" name="image" onChange={event => handleInput(index, event, 'workimage')} required={isRequired} />
                                             <label className="custom-file-label form-control" >Choose file</label>
                                         </div>
                                     </div>
@@ -368,7 +380,7 @@ export const FormHome: React.FC = () => {
                                     <div className="form-group">
                                         {index === 0 ? <label>Icon</label> : null}
                                         <div className="custom-file">
-                                            <input type="file" className="custom-file-input" name="icon" onChange={event => handleInput(index, event, 'testimonialimage')} required />
+                                            <input type="file" className="custom-file-input" name="icon" onChange={event => handleInput(index, event, 'testimonialimage')}  required={isRequired} />
                                             <label className="custom-file-label form-control" >Choose file</label>
 
                                         </div>
@@ -423,7 +435,7 @@ export const FormHome: React.FC = () => {
                             </div>
                         )
                     })}
-                    <button type="submit" className="btn btn-primary">Submit</button>
+                    <button type="submit" disabled={submitLoading} className="btn btn-primary">Submit</button>
                 </form>
             </div>
         </div>
