@@ -100,15 +100,17 @@ export const FormHome: React.FC = () => {
     const handleInput = (index: any, event, name) => {
         let data = { ...mainSection };
 
-  
+        const title = [...mainSection.title];
         const testimonials = [...mainSection.testimonials];
         const functionality = [...mainSection.functionality];
 
-        console.log(index, event, name)
-    debugger;
+    // debugger;
         switch (name) {
             case 'homesection':
-                data.title[index][event.target.name] = event.target.value;
+                const titleData = {...title[index]}
+                titleData[event.target.name] = event.target.value;
+                title[index] = titleData
+
                 break;
             // case 'mainimage':
             //     data.homeSection[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
@@ -122,12 +124,15 @@ export const FormHome: React.FC = () => {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
              
+                const obj = {...functionality[index]}
                 reader.onloadend = () => {
                   const arrayBuffer = reader.result;
-                  const obj = {...functionality[index]}
                   obj[event.target.name] = arrayBuffer;
                   functionality[index] = obj
+                  setMainSection({...data, functionality, testimonials });
+
                 };
+              
                 break;
             case 'Testimonials':
                 data.testimonials[index][event.target.name] = event.target.value;
@@ -143,14 +148,16 @@ export const FormHome: React.FC = () => {
                   const obj = {...testimonials[index]}
                   obj[event.target.name] = arrayBuffer;
                   testimonials[index] = obj
+                  setMainSection({...data, functionality, testimonials });
+
                 };
-                // data.testimonials[index][event.target.name] = event.target.files[0].name
+     
                 break;
             default:
                 break;
         }
         console.log({...data, functionality, testimonials })
-        setMainSection({...data, functionality, testimonials });
+        setMainSection({...data, title, functionality, testimonials });
     }
 
     const inputData = {
@@ -194,8 +201,7 @@ export const FormHome: React.FC = () => {
     });
 
     useEffect(() => {
-        if (data) {
-            setTimeout(() =>
+        if (data && data.getHome && data.getHome.length) {
                 setMainSection(
                     {
                         title: [
@@ -208,8 +214,7 @@ export const FormHome: React.FC = () => {
                             ...data.getHome[0].functionality
                         ],
                         _id: data.getHome[0]._id
-                    }
-                ), 1000);
+                    })
         }
     }, [loading]);
 
