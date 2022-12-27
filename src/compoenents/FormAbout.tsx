@@ -5,13 +5,7 @@ const GET_VIEWER = gql`query{
         _id
         aboutpage {
           _id
-          title
-          image1
-          image2
-          desc
-          readmorelink
           worklist
-          contactlink
         }
         achievement {
           title
@@ -28,7 +22,6 @@ const GET_VIEWER = gql`query{
         }
       }
   }`
-
 const UPDATE_LINK_MUTATION = gql`
 mutation Mutation($id: String!, $input: AboutInput) {
   updateAbout(_id: $id, input: $input) {
@@ -52,16 +45,29 @@ export const FormAbout: React.FC = () => {
     const [aboutSection, setAboutSection] = React.useState(initialstate);
 
     const handleChangeInput = (index: any, event: React.ChangeEvent<HTMLInputElement>, name) => {
-        const data = { ...aboutSection };
+        // const data = { ...aboutSection };
+        
+        let data = { ...aboutSection };
+
+        const Achievements = [...aboutSection.Achievements];
         switch (name) {
             case 'Achievements':
-                data.Achievements[index][event.target.name] = event.target.value;
+                const AchievementsData = {...Achievements[index]}
+                AchievementsData[event.target.name] = event.target.value;
+                Achievements[index] = AchievementsData
                 break;
+                // data.Achievements[index][event.target.name] = event.target.value;
+                // break;
             default:
                 break;
         }
-        setAboutSection(data);
+        setAboutSection({...data, Achievements });
+        // setAboutSection(data);
     }
+    const inputData = [
+        ...aboutSection.Achievements,
+    ]
+
     const addFields = (fieldName) => {
         switch (fieldName) {
             case 'Achievements':
@@ -71,11 +77,8 @@ export const FormAbout: React.FC = () => {
                 break;
         }
     }
-    const inputData = [
-        ...aboutSection.Achievements,
-    ]
-    const { loading, data, error } = useQuery(GET_VIEWER)
 
+    const { loading, data } = useQuery(GET_VIEWER)
     const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
         variables: {
             "id": aboutSection._id,
@@ -84,14 +87,13 @@ export const FormAbout: React.FC = () => {
             }
         }
     });
-
+    
     useEffect(() => {
         if (data) {
             setTimeout(() =>
                 setAboutSection(({
                     ...aboutSection, Achievements:
                         data.getAbout[0].achievement, _id: data.getAbout[0]._id
-
                 }))
                 , 500);
         }
@@ -101,7 +103,6 @@ export const FormAbout: React.FC = () => {
     return (
         <div>
             <h4 className="card-title">About Page</h4>
-
             <form className="mt-4" onSubmit={(e) => {
                 e.preventDefault();
                 if (aboutSection && aboutSection._id) {
@@ -143,7 +144,6 @@ export const FormAbout: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            
                             <div className="col-2">
                                 {index === aboutSection.Achievements.length - 1 &&
                                     <div className="form-group">

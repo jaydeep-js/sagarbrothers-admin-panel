@@ -27,7 +27,6 @@ const GET_VIEWER = gql`query{
     }
   }
 }`;
-
 const CREATE_LINK_MUTATION = gql`
 mutation Mutation($input: ContactInput) {
   addContact(input: $input) {
@@ -76,7 +75,6 @@ mutation Mutation($input: FooterInput, $id: String!) {
   }
   }
   `;
-
 export const FormContact: React.FC = () => {
 
   const initialstate = {
@@ -95,7 +93,6 @@ export const FormContact: React.FC = () => {
       "contactresult": [{ icon: '', link: '', title: '', text: '' }]
     }
   };
-
   const [contactsection, setContactSection] = React.useState(initialstate);
   const handleInput = (index: any, event, name) => {
     const data = { ...contactsection };
@@ -111,6 +108,7 @@ export const FormContact: React.FC = () => {
     }
     setContactSection(data);
   }
+  
   const handlesingleInput = (event, names) => {
     const datainput = { ...contactsection };
     switch (names) {
@@ -140,6 +138,7 @@ export const FormContact: React.FC = () => {
     }
     setContactSection(datainput);
   }
+
   const addFields = (fieldName) => {
     switch (fieldName) {
       case 'contactform':
@@ -157,7 +156,6 @@ export const FormContact: React.FC = () => {
         break;
     }
   }
-
   useEffect(() => {
     (async () => {
       try {
@@ -215,17 +213,13 @@ export const FormContact: React.FC = () => {
     ]
   }
   const { loading, data, error } = useQuery(GET_VIEWER)
-
   const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
     variables: {
       "input": inputData,
       "id": contactsection._id
     },
-
   });
-
   useEffect(() => {
-
     if (data) {
       setContactSection(({
         ...contactsection, map: {
@@ -251,13 +245,10 @@ export const FormContact: React.FC = () => {
     }
 
   }, [data]);
-
-
   const [createLink] = useMutation(CREATE_LINK_MUTATION, {
     variables: {
       "input": inputData
     },
-
   });
   return (
     <div className="card">
@@ -281,7 +272,6 @@ export const FormContact: React.FC = () => {
                 className="form-control"
                 placeholder="Title" required />
             </div>
-
             <div className="form-group col-5">
               <label>Sub Title</label>
               <input type="text"
@@ -307,7 +297,6 @@ export const FormContact: React.FC = () => {
                         className="form-control"
                         placeholder="Name" required />
                     </div>
-
                     <div className="form-group col-6" >
                       {index === 0 ? <label>Type</label> : null}
                       <input type="text"
@@ -318,7 +307,6 @@ export const FormContact: React.FC = () => {
                         placeholder="Type" required />
                     </div>
                   </div>
-
                   <div className="row">
                     <div className="form-group col">
                       {index === 0 ? <label>Classname</label> : null}
@@ -352,7 +340,6 @@ export const FormContact: React.FC = () => {
                 className="form-control mr-3 mb-3"
                 placeholder="Address" required />
             </div>
-
             <div className="form-group col-3">
               <label>latitude</label>
               <input type="text"
@@ -362,7 +349,6 @@ export const FormContact: React.FC = () => {
                 className="form-control mr-3 mb-3"
                 placeholder="Latitude" required />
             </div>
-
             <div className="form-group col-3">
               <label>Longitude</label>
               <input type="text"
@@ -372,14 +358,12 @@ export const FormContact: React.FC = () => {
                 className="form-control mr-3 mb-3"
                 placeholder="Longitude" required />
             </div>
-
           </div>
           <div className="form-row" >
             <div className="form-group col-10" >
               <div id="map" style={{ height: '400px', zIndex: '1' }} ></div>
             </div>
           </div>
-
           <div className="form-row mt-2" >
             <div className="form-group col-10" >
               <label>Title</label>
@@ -404,7 +388,6 @@ export const FormContact: React.FC = () => {
               <div className="row align-items-end" key={index}>
                 <div className="col">
                   <div className="row">
-
                     <div className="form-group col-3" >
                       {index === 0 ? <label>Title</label> : null}
                       <input type="text"
@@ -414,7 +397,6 @@ export const FormContact: React.FC = () => {
                         className="form-control"
                         placeholder="Title" required />
                     </div>
-
                     <div className="form-group col-3" >
                       {index === 0 ? <label>Text</label> : null}
                       <input type="text"
@@ -424,7 +406,6 @@ export const FormContact: React.FC = () => {
                         className="form-control"
                         placeholder="Text" required />
                     </div>
-
                     <div className="form-group col-3" >
                       {index === 0 ? <label>Icon</label> : null}
                       <input type="text"

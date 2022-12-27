@@ -65,6 +65,7 @@ mutation Mutation($input: FooterInput, $id: String!) {
     }
   }
   `;
+
 export const FormFooter: React.FC = () => {
     const initialstate = {
         _id: '',
@@ -82,28 +83,34 @@ export const FormFooter: React.FC = () => {
         copyrightby: ""
     };
     const [footerFields, setFooterFields] = React.useState(initialstate);
-
     const handleInput = (index: any, event: React.ChangeEvent<HTMLInputElement>, name) => {
 
-        const data = { ...footerFields };
+        // const data = { ...footerFields };
+        let data = { ...footerFields };
+        const navigate = [...footerFields.navigate];
+        const customercare = [...footerFields.customercare];
 
         switch (name) {
             case 'customercare':
-                data.customercare[index][event.target.name] = event.target.value;
+                const customercareData = { ...customercare[index] }
+                customercareData[event.target.name] = event.target.value;
+                customercare[index] = customercareData
+                // data.customercare[index][event.target.name] = event.target.value;
                 break;
             case 'navigate':
-                data.navigate[index][event.target.name] = event.target.value;
+                const navigateData = { ...navigate[index] }
+                navigateData[event.target.name] = event.target.value;
+                navigate[index] = navigateData
+                // data.navigate[index][event.target.name] = event.target.value;
                 break;
             default:
                 break;
         }
 
-        setFooterFields(data);
+        setFooterFields({...data, customercare, navigate });
     }
     const handlesingleInput = (event, names) => {
-
         const datainput = { ...footerFields };
-
         switch (names) {
             case 'fileupload':
                 datainput[event.target.name] = URL.createObjectURL(event.target.files[0]);
@@ -128,7 +135,6 @@ export const FormFooter: React.FC = () => {
         }
         setFooterFields(datainput);
     }
-
     const addFields = (fieldName) => {
         switch (fieldName) {
             case 'customercare':
@@ -141,7 +147,6 @@ export const FormFooter: React.FC = () => {
                 break;
         }
     }
-
     const inputData = {
         address: footerFields.address,
         navigate: [
@@ -156,27 +161,31 @@ export const FormFooter: React.FC = () => {
         readmorelink: footerFields.readmorelink,
         copyrightby: footerFields.copyrightby
     }
-    const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+
+    let { loading, data } = useQuery(GET_VIEWER)
+
+    const [createLink,{ loading: submitLoading }] = useMutation(CREATE_LINK_MUTATION, {
         variables: {
             "input": inputData
         },
+        fetchPolicy: 'no-cache'
     });
 
-    const { loading, data, error } = useQuery(GET_VIEWER)
-
+    // const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+    //     variables: {
+    //         "input": inputData
+    //     },
+    // });
+    // const { loading, data, error } = useQuery(GET_VIEWER)
     const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
-
         variables: {
             "input": inputData,
             "id": footerFields._id
         },
 
     });
-    
     useEffect(() => {
-
         if (data) {
-            
             setFooterFields(
                 {
                     address: data.getFooter[0].address,
@@ -192,7 +201,7 @@ export const FormFooter: React.FC = () => {
             )
         }
 
-    }, [data]);
+    }, [loading,submitLoading]);
     return (
         <div className="card">
             <div className="card-body">
@@ -254,9 +263,7 @@ export const FormFooter: React.FC = () => {
                             </div>
                         )
                     })}
-
                     <strong >Navigate</strong>
-
                     {footerFields.navigate.map((input, index) => {
                         return (
                             <div className="row align-items-end mt-2" key={index}>
@@ -330,7 +337,8 @@ export const FormFooter: React.FC = () => {
                         onChange={event => handlesingleInput(event, 'copytext')}
                         className="form-control mb-2"
                         placeholder="CopyRightText" />
-                    <button type="submit" className="btn btn-primary">Submit</button>
+                    <button type="submit" disabled={submitLoading} className="btn btn-primary">Submit</button>
+                    {/* <button type="submit" className="btn btn-primary">Submit</button> */}
                 </form>
             </div>
         </div>

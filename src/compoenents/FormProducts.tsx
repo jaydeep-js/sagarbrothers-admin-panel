@@ -1,265 +1,389 @@
-import React, { useEffect } from "react";
-import { useMutation, gql, useQuery } from '@apollo/client';
+import React, { Fragment, useEffect } from "react";
+import { useMutation, gql, useQuery } from "@apollo/client";
+import Select from "react-select";
 
 const CREATE_LINK_MUTATION = gql`
-mutation Mutation($input: ProductInput) {
+  mutation Mutation($input: ProductInput) {
     addProduct(input: $input) {
       _id
-      Productpage {
-        thumb_img
-        skutext
-        images
+      productPage {
+        _id
+        image
+        thumbImg
+        skuText
+        categoryId
         desc
-        categoryid {
-          _id
-        }
       }
     }
   }
 `;
 
-
-const GET_VIEWER = gql`query{
-    getProduct {
+const GET_CATEGORY_VIEWER = gql`
+  query {
+    getCategories {
+      _id
+      category {
         _id
-        Productpage {
-          thumb_img
-          skutext
-          images
-          desc
-          categoryid {
-            _id
-          }
-        }
+        name
       }
-  }`
+    }
+  }
+`;
+
+const GET_VIEWER = gql`
+  query {
+    getProducts {
+      _id
+      productPage {
+        _id
+        image
+        thumbImg
+        skuText
+        categoryId
+        desc
+      }
+    }
+  }
+`;
 
 const UPDATE_LINK_MUTATION = gql`
-mutation Updateproduct($id: String!, $input: ProductInput) {
-    updateproduct(_id: $id, input: $input) {
+  mutation updateProduct($_id: String!, $input: ProductInput) {
+    updateProduct(_id: $_id, input: $input) {
       _id
-      Productpage {
-        thumb_img
-        skutext
-        images
-        desc
-        categoryid {
-          categoryname
-          _id
-        }
+      productPage {
         _id
+        desc
+        categoryId
+        image
+        skuText
+        thumbImg
       }
     }
   }
 `;
 
-
 export const FormProducts: React.FC = () => {
-
-    const initialstate = {
-        _id: '',
-        Productpage: [
-            { images: '', thumb_img: '', skutext: '', desc: '' , categoryid:{_id:''}}
-        ],
-        // product: {
-        //     title: '' ,
-        //     Categoryname: { Categoryname: '' },
-        //     "ProductsData": [{ skutext: '', Image: '', subimage: '' }],
-        // }
+  const [productSection, setProductSection] = React.useState({
+    _id: "",
+    productPage: [
+      {
+        categoryId: [],
+        desc: "",
+        image: "",
+        skuText: "",
+        thumbImg: "",
+      },
+    ],
+  });
+  const [selectedOption, setSelectedOption] = React.useState([[]]);
+  const [categoryOptions, setCategoryOptions] = React.useState([]);
+  const [isNewItem, setIsNewItem] = React.useState(true);
+  const [errors, setErrors] = React.useState({
+    image: [],
+    thumbImg: [],
+  });
+  const validateInput = () => {
+    const err = {
+      image: [],
+      thumbImg: [],
     };
-
-    const [productSection, setproductSection] = React.useState(initialstate);
-    const handlesingleInput = (event, names) => {
-        const datainput = { ...productSection };
-        switch (names) {
-            case 'producttitle':
-                datainput.Productpage[event.target.name] = event.target.value;
-                break;
-            // case 'Categoryname':
-            //     datainput.product.Categoryname[event.target.name] = event.target.value;
-            //     break;
-            default:
-                break;
+    if (productSection.productPage.length) {
+      productSection.productPage.map(({ image = "", thumbImg = "" }) => {
+        let imgErr = "";
+        let thumbErr = "";
+        if (!image.length) {
+          imgErr = "Image is required";
         }
-        setproductSection(datainput);
-    }
-    const handleInput = (index: any, event, name) => {
-        const data = { ...productSection };
-        switch (name) {
-            case 'product':
-                data.Productpage[index][event.target.name] = event.target.value;
-                break;
-            case 'productimage':
-                data.Productpage[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
-                break;
-            case 'subimage':
-                data.Productpage[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
-                break;
-            default:
-                break;
+        if (!thumbImg.length) {
+          thumbErr = "Thumb Image is required";
         }
-        setproductSection(data);
-    }
-    const addFields = (fieldName) => {
-        switch (fieldName) {
-
-            case 'product':
-                setproductSection(({ ...productSection, Productpage: [...productSection.Productpage, { images: '', thumb_img: '', skutext: '', desc: '', categoryid:{_id:''}}] }));
-                 break;
-            default:
-                break;
-        }
-    }
-    const { loading, data } = useQuery(GET_VIEWER)
-
-    const inputData = {
-        Productpage: [
-            ...productSection.Productpage
-        ]
+        err.image.push(imgErr);
+        err.thumbImg.push(thumbErr);
+      });
+      setErrors({ ...err });
     }
 
-    const [createLink] = useMutation(CREATE_LINK_MUTATION, {
-        variables: {
-            "input": inputData
-        },
-    });
+    return err.image.length || err.thumbImg.length;
+  };
 
-    const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
-        variables: {
-            "input": inputData,
-            "id": productSection._id,
-        },
-    });
+  const handleInput = (index: any, event, name) => {
+    const products = [...productSection.productPage];
+    const productData = { ...products[index] };
 
+    switch (name) {
+      case "categoryId":
+        const values = event.map(({ value }) => value);
 
-    useEffect(() => {
-        if (data) {
-            setTimeout(() =>
-                setproductSection(
-                    {
-                        Productpage: [
-                            ...data.getProduct[0].Productpage
-                        ],
-                        _id: data.getProduct[0]._id
-                    }
-                ), 1000);
+        const selectedCat = [...values];
+        productData[name] = selectedCat;
+        selectedOption[index] = [...selectedCat];
+
+        console.log("event", event);
+        console.log("selectedOption", selectedOption);
+
+        setSelectedOption([...selectedOption]);
+        break;
+      case "desc":
+        productData[event.target.name] = event.target.value;
+        break;
+      case "image":
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = () => {
+          const arrayBuffer = reader.result;
+          productData[event.target.name] = arrayBuffer;
+          products[index] = productData;
+          setProductSection({ ...productSection, productPage: products });
+        };
+        break;
+      case "skuText":
+        productData[event.target.name] = event.target.value;
+        break;
+      case "thumbImg":
+        const readerThumb = new FileReader();
+        readerThumb.readAsDataURL(event.target.files[0]);
+        readerThumb.onloadend = () => {
+          const arrayBuffer = readerThumb.result;
+          productData[event.target.name] = arrayBuffer;
+          products[index] = productData;
+          setProductSection({ ...productSection, productPage: products });
+        };
+        break;
+      default:
+        break;
+    }
+    products[index] = productData;
+    setProductSection({ ...productSection, productPage: products });
+  };
+
+  const addFields = (fieldName) => {
+    switch (fieldName) {
+      case "product":
+        setProductSection({
+          ...productSection,
+          productPage: [
+            ...productSection.productPage,
+            {
+              image: "",
+              thumbImg: "",
+              skuText: "",
+              desc: "",
+              categoryId: [],
+            },
+          ],
+        });
+        break;
+      default:
+        break;
+    }
+  };
+
+  const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+    variables: {
+      input: {
+        ...productSection,
+        _id: undefined,
+      },
+    },
+  });
+
+  const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
+    variables: {
+      input: { ...productSection, _id: undefined },
+      _id: productSection._id,
+    },
+  });
+  const { loading, data } = useQuery(GET_VIEWER);
+  const { loading: categoryOptionLoad, data: category } =
+    useQuery(GET_CATEGORY_VIEWER);
+
+  useEffect(() => {
+    if (category && category.getCategories) {
+      const op = category.getCategories.category.map((cat) => ({
+        label: cat.name,
+        value: cat._id,
+      }));
+      setCategoryOptions(op);
+    }
+  }, [categoryOptionLoad]);
+
+  useEffect(() => {
+    if (data && data.getProducts) {
+      setProductSection({ ...data.getProducts });
+    }
+    if (category && data && data.getProducts && categoryOptions.length) {
+      const selectedOp = data.getProducts.productPage.map((p, i) => {
+        if (!p.categoryId) {
+          p.categoryId = [];
         }
-    }, [loading]);
+        return p.categoryId.map((selCat) => {
+          const categoryLabel = categoryOptions.find(
+            (category) => category.value == selCat
+          );
+          return { value: selCat, label: categoryLabel.label };
+        });
+      });
+      setSelectedOption([...selectedOp]);
+    }
+    if (productSection && productSection._id) {
+      setIsNewItem(false);
+    }
+  }, [loading, productSection._id, categoryOptionLoad]);
 
-    // const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    //     event.preventDefault();
-    //     console.log(productSection, 'Successful');
-    // };
-
-    return (
-        <div className="card">
-            <div className="card-body">
-                <h4 className="card-title">Product Page</h4>
-                <form className="mt-4" onSubmit={(e) => {
-                    e.preventDefault();
-                    if (productSection && productSection._id) {
-                        updateLink();
-                    } else {
-                        createLink();
-                    }
-                }}>
-                    {/* <div className="row">
-                        <div className="col-5">
-                            <div className="form-group">
-                                <label>Title</label>
-                                <input type="text"
-                                    name='title'
-                                    value={productSection.product.title}
-                                    onChange={event => handlesingleInput(event, 'producttitle')}
-                                    className="form-control"
-                                    placeholder="Title" required />
-                            </div>
-                        </div>
-                        <div className="col-5">
-                            <div className="form-group">
-                                <label>Category Name</label>
-                                <input type="text"
-                                    name='Categoryname'
-                                    value={productSection.product.Categoryname.Categoryname}
-                                    onChange={event => handlesingleInput(event, 'Categoryname')}
-                                    className="form-control"
-                                    placeholder="Categoryname" required />
-                            </div>
-                        </div>
-                    </div> */}
-                    <strong>All Product</strong>
-                    {productSection.Productpage.map((input, index) => {
-                        return (
-                            <div className="row align-items-end mt-2" key={index}>
-                                <div className="col">
-                                <div className="form-group" >
-                                    {index === 0 ? <label>SKu Text</label> : null}
-                                        <input type="text"
-                                            name='skutext'
-                                            value={input.skutext}
-                                            onChange={event => handleInput(index, event, 'product')}
-                                            className="form-control"
-                                            placeholder="Sku Text" required />
-                                    </div>
-                                    <div className="form-group" >
-                                    {index === 0 ? <label>Category</label> : null}
-                                        <input type="text"
-                                            name='categoryid'
-                                            value={input.categoryid._id}
-                                            onChange={event => handleInput(index, event, 'product')}
-                                            className="form-control"
-                                            placeholder="categoryid" required />
-                                    </div>
-                                    <div className="form-group" >
-                                    {index === 0 ? <label>Desc</label> : null}
-                                        <input type="text"
-                                            name='desc'
-                                            value={input.desc}
-                                            onChange={event => handleInput(index, event, 'product')}
-                                            className="form-control"
-                                            placeholder="desc" required />
-                                    </div>
-                                    <div className="form-group">
-                                    {index === 0 ? <label>Image</label> : null}
-                                        <div className="custom-file">
-                                            <input type="file" className="custom-file-input" name="images" onChange={event => handleInput(index, event, 'productimage')} required />
-                                            <label className="custom-file-label form-control" >Choose file</label>
-
-                                        </div>
-                                    </div>
-                                    {productSection.Productpage[index].images === '' ? null :
-                                        <div className="form-group">
-                                            <img src={productSection.Productpage[index].images} alt="img" width="150" height="150" className="shadow-sm bg-white rounded" />
-
-                                        </div>
-                                    }
-                                    <div className="form-group">
-                                    {index === 0 ? <label>Sub Image</label> : null}
-                                        <div className="custom-file">
-                                            <input type="file" className="custom-file-input" name="thumb_img" onChange={event => handleInput(index, event, 'subimage')} required />
-                                            <label className="custom-file-label form-control" >Choose file</label>
-                                        </div>
-                                    </div>
-                                    {productSection.Productpage[index].thumb_img === '' ? null :
-                                        <div className="form-group">
-                                            <img src={productSection.Productpage[index].thumb_img} alt="subimage" width="150" height="150" className="shadow-sm bg-white rounded" />
-
-                                        </div>
-                                    }
-                                </div>
-                                <div className="col-2">
-                                    {index === productSection.Productpage.length - 1 &&
-                                        <div className="form-group">
-                                            <button onClick={() => addFields("product")} className="form-control bg-success text-white">+</button>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        )
-                    })}
-                    <button type="submit" className="btn btn-primary">Submit</button>
-                </form>
-            </div>
-        </div>
-    )
-}
+  return (
+    <div className="card">
+      <div className="card-body">
+        <h4 className="card-title">Product Page</h4>
+        <form
+          className="mt-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (validateInput()) {
+              if (isNewItem) {
+                createLink().then(({ data }) => {
+                  if (data && data.addProduct) {
+                    setProductSection({
+                      ...productSection,
+                      _id: data.addProduct._id,
+                    });
+                  }
+                });
+              } else {
+                updateLink();
+              }
+            }
+          }}
+        >
+          <strong>All Product</strong>
+          {productSection.productPage.map((input, index) => {
+            return (
+              <div className="row align-items-end mt-2" key={index}>
+                <div className="col">
+                  <div className="form-group">
+                    {index === 0 ? <label>SKu Text</label> : null}
+                    <input
+                      type="text"
+                      name="skuText"
+                      value={input.skuText}
+                      onChange={(event) => handleInput(index, event, "skuText")}
+                      className="form-control"
+                      placeholder="Sku Text"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    {index === 0 ? <label>Category</label> : null}
+                    <Select
+                      name="categoryId"
+                      onChange={(event) =>
+                        handleInput(index, event, "categoryId")
+                      }
+                      className="form-control"
+                      placeholder="categoryId"
+                      value={categoryOptions.filter((c) =>
+                        input.categoryId.includes(c.value)
+                      )}
+                      options={categoryOptions}
+                      required
+                      isMulti
+                    />
+                  </div>
+                  <div className="form-group">
+                    {index === 0 ? <label>Desc</label> : null}
+                    <input
+                      type="text"
+                      name="desc"
+                      value={input.desc}
+                      onChange={(event) => handleInput(index, event, "desc")}
+                      className="form-control"
+                      placeholder="desc"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    {index === 0 ? <label>Image</label> : null}
+                    <div className="custom-file">
+                      <input
+                        type="file"
+                        className="custom-file-input"
+                        name="image"
+                        onChange={(event) => handleInput(index, event, "image")}
+                      />
+                      <label className="custom-file-label form-control">
+                        Choose file
+                      </label>
+                    </div>
+                  </div>
+                  {errors.image[index]
+                    ? errors.image[index].length > 0 && (
+                        <span className="error">{errors.image[index]}</span>
+                      )
+                    : ""}
+                  {productSection.productPage[index].image === "" ? null : (
+                    <div className="form-group">
+                      <img
+                        src={productSection.productPage[index].image}
+                        alt="img"
+                        width="150"
+                        height="150"
+                        className="shadow-sm bg-white rounded"
+                      />
+                    </div>
+                  )}
+                  <div className="form-group">
+                    {index === 0 ? <label>Sub Image</label> : null}
+                    <div className="custom-file">
+                      <input
+                        type="file"
+                        className="custom-file-input"
+                        name="thumbImg"
+                        onChange={(event) =>
+                          handleInput(index, event, "thumbImg")
+                        }
+                      />
+                      <label className="custom-file-label form-control">
+                        Choose file
+                      </label>
+                    </div>
+                  </div>
+                  {errors.thumbImg[index]
+                    ? errors.thumbImg[index].length > 0 && (
+                        <span className="error">{errors.thumbImg[index]}</span>
+                      )
+                    : ""}
+                  {productSection.productPage[index].thumbImg === "" ? null : (
+                    <div className="form-group">
+                      <img
+                        src={productSection.productPage[index].thumbImg}
+                        alt="subimage"
+                        width="150"
+                        height="150"
+                        className="shadow-sm bg-white rounded"
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="col-2">
+                  {index === productSection.productPage.length - 1 && (
+                    <div className="form-group">
+                      <button
+                        onClick={() => addFields("product")}
+                        className="form-control bg-success text-white"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <button type="submit" className="btn btn-primary">
+            Submit
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};

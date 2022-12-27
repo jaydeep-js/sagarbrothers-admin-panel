@@ -19,7 +19,6 @@ const GET_VIEWER = gql`query{
         }
       }
   }`;
-
 const CREATE_LINK_MUTATION = gql`
 mutation Mutation($input: HeaderInput) {
     addHeader(input: $input) {
@@ -41,7 +40,6 @@ mutation Mutation($input: HeaderInput) {
     }
   }
 `;
-
 const UPDATE_LINK_MUTATION = gql`
 mutation Mutation($id: String!, $input: HeaderInput) {
     updateHeader(_id: $id, input: $input) {
@@ -84,10 +82,9 @@ export const Form: React.FC = () => {
     };
 
     const [mainFields, setmainFields] = React.useState(initialstate);
-
     const handlesingleInput = (event, names) => {
         const datainput = { ...mainFields };
-        
+
         switch (names) {
             case 'time':
                 datainput[event.target.name] = event.target.value;
@@ -114,18 +111,24 @@ export const Form: React.FC = () => {
     }
 
     const handleChangeInput = (index: any, event: React.ChangeEvent<HTMLInputElement>, name) => {
-        const data = { ...mainFields };
+        let data = { ...mainFields };
+        const menubar = [...mainFields.menubar];
+        const socialicon = [...mainFields.socialicon];
         switch (name) {
             case 'Menu':
-                data.menubar[index][event.target.name] = event.target.value;
+                const menuData = {...menubar[index]}
+                menuData[event.target.name] = event.target.value;
+                menubar[index] = menuData
                 break;
             case 'socialicon':
-                data.socialicon[index][event.target.name] = event.target.value;
+                const socialData = { ...socialicon[index] }
+                socialData[event.target.name] = event.target.value;
+                socialicon[index] = socialData
                 break;
             default:
                 break;
         }
-        setmainFields(data);
+        setmainFields({...data, menubar,socialicon });
     }
 
     const addFields = (fieldName) => {
@@ -155,13 +158,13 @@ export const Form: React.FC = () => {
             ...mainFields.menubar
         ]
     }
+    let { loading, data } = useQuery(GET_VIEWER)
 
-    const { loading, data, error } = useQuery(GET_VIEWER)
-
-    const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+    const [createLink,{ loading: submitLoading }] = useMutation(CREATE_LINK_MUTATION, {
         variables: {
             "input": inputData
         },
+        fetchPolicy: 'no-cache'
     });
 
     const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
@@ -169,11 +172,8 @@ export const Form: React.FC = () => {
             "input": inputData,
             "id": mainFields._id
         },
-
-    });  
-
+    });
     useEffect(() => {
-        
         if (data) {
             setmainFields(
                 {
@@ -190,7 +190,7 @@ export const Form: React.FC = () => {
             )
         }
 
-    }, [loading]);
+    }, [loading,submitLoading]);
 
     return (
         <div className="card">
@@ -201,7 +201,7 @@ export const Form: React.FC = () => {
                     if (mainFields && mainFields._id) {
                         updateLink();
                     } else {
-                    createLink();
+                        createLink();
                     }
                 }}>
                     <strong>Time</strong>
@@ -237,7 +237,8 @@ export const Form: React.FC = () => {
                                 onChange={event => handlesingleInput(event, 'location')}
                                 className="form-control" placeholder="Enter location" />
                         </div>
-                    </div>   
+                    </div>
+
                     <strong>Inquiry Email</strong>
                     <div className="row mt-2">
                         <div className="form-group col-10">
@@ -249,6 +250,7 @@ export const Form: React.FC = () => {
                                 className="form-control" placeholder="Enter Inquiry Email" />
                         </div>
                     </div>
+
                     <strong>contact</strong>
                     <div className="row mt-2">
                         <div className="form-group col-10">
@@ -272,7 +274,6 @@ export const Form: React.FC = () => {
                                     <label className="custom-file-label form-control" >Choose file</label>
                                 </div>
                             </div>
-
                             {mainFields.logo === '' ? null :
                                 <div className="form-group">
                                     <img src={'assets/img/' + mainFields.logo} alt="img" width="150" height="150" className="shadow-sm bg-white rounded" />
@@ -302,8 +303,8 @@ export const Form: React.FC = () => {
                                             {index === 0 ? <label> Link</label> : null}
                                             <input type="text"
                                                 name='menulink'
-                                                value={mainFields.menubar[index].menulink}
-                                                // value={input.menulink}
+                                                // value={mainFields.menubar[index].menulink}
+                                                value={input.menulink}
                                                 onChange={event => handleChangeInput(index, event, 'Menu')}
                                                 className="form-control mr-3"
                                                 placeholder="MenuLink" />
@@ -336,7 +337,6 @@ export const Form: React.FC = () => {
                                                 placeholder="icon" />
                                         </div>
                                     </div>
-
                                     <div className="form-row">
                                         <div className="form-group col" >
                                             {index === 0 ? <label> Link</label> : null}
@@ -349,7 +349,6 @@ export const Form: React.FC = () => {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div className="col-2">
                                     {index === mainFields.socialicon.length - 1 &&
                                         <div className="form-group">
@@ -360,7 +359,7 @@ export const Form: React.FC = () => {
                             </div>
                         )
                     })}
-                    <button type="submit" className="btn btn-primary">Submit</button>
+                    <button type="submit" disabled={submitLoading} className="btn btn-primary">Submit</button>
                 </form>
             </div>
         </div>

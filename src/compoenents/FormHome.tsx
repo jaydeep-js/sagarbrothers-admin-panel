@@ -106,17 +106,12 @@ export const FormHome: React.FC = () => {
         const title = [...mainSection.title];
         const testimonials = [...mainSection.testimonials];
         const functionality = [...mainSection.functionality];
-
-    // debugger;
         switch (name) {
             case 'homesection':
                 const titleData = {...title[index]}
                 titleData[event.target.name] = event.target.value;
                 title[index] = titleData
                 break;
-            // case 'mainimage':
-            //     data.homeSection[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
-            //     break;
             case 'worksection':
                 const functionalityData = {...functionality[index]}
                 functionalityData[event.target.name] = event.target.value;

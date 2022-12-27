@@ -5,13 +5,7 @@ const GET_VIEWER = gql`query{
         _id
         aboutpage {
           _id
-          title
-          image1
-          image2
-          desc
-          readmorelink
           worklist
-          contactlink
         }
         achievement {
           _id
@@ -29,6 +23,7 @@ const GET_VIEWER = gql`query{
         }
       }
   }`
+
 const CREATE_LINK_MUTATION = gql`
 mutation Mutation($input: AboutInput) {
     addAbout(input: $input) {
@@ -65,22 +60,40 @@ export const FormWorkplace: React.FC = () => {
             { name: '', desc: '', image: '', readmorelink: '', contactuslink: '' }
         ]
     };
-
     const [workplaceSection, setworPlaceSection] = React.useState(initialstate);
+    const [isRequired, setIsRequired] = React.useState(true);
+    const [isNewItem, setIsNewItem] = React.useState(true);
 
     const handleInput = (index: any, event, name) => {
-        const data = { ...workplaceSection };        
+        let data = { ...workplaceSection };
+
+        const workplace = [...workplaceSection.workplace];
+
         switch (name) {
             case 'WorkPlace':
-                data.workplace[index][event.target.name] = event.target.value;
+                const workplaceData = { ...workplace[index] }
+                workplaceData[event.target.name] = event.target.value;
+                workplace[index] = workplaceData
+
                 break;
             case 'workplaceimage':
-                data.workplace[index][event.target.name] = URL.createObjectURL(event.target.files[0]);
+                const file = event.target.files[0];
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+
+                const obj = { ...workplace[index] }
+                reader.onloadend = () => {
+                    const arrayBuffer = reader.result;
+                    obj[event.target.name] = arrayBuffer;
+                    workplace[index] = obj
+                    setworPlaceSection({ ...data, workplace });
+                };
                 break;
             default:
                 break;
         }
-        setworPlaceSection(data);
+        setworPlaceSection({ ...data, workplace });
     }
 
     const addFields = (fieldName) => {
@@ -99,22 +112,28 @@ export const FormWorkplace: React.FC = () => {
             ...workplaceSection.workplace
         ]
     }
-    const [createLink] = useMutation(CREATE_LINK_MUTATION, {
+
+    const [createLink, { loading: submitLoading }] = useMutation(CREATE_LINK_MUTATION, {
         variables: {
-            "input":  inputData
+            "input": inputData
         },
+        fetchPolicy: 'no-cache'
     });
 
-    const { loading, data, error } = useQuery(GET_VIEWER)
-
+    let { loading, data } = useQuery(GET_VIEWER)
     const [updateLink] = useMutation(UPDATE_LINK_MUTATION, {
         variables: {
-            "input":  inputData,
+            "input": inputData,
             "id": workplaceSection._id
         },
     });
+
     useEffect(() => {
-        if (data) {
+        if (workplaceSection && workplaceSection._id) {
+            setIsRequired(false)
+            setIsNewItem(false)
+        }
+        if (data && data.getAbout && data.getAbout.length) {
             setTimeout(() =>
                 setworPlaceSection(({
                     ...workplaceSection, workplace:
@@ -122,18 +141,22 @@ export const FormWorkplace: React.FC = () => {
 
                 })), 1000);
         }
-    }, [loading]);
-
+    }, [loading, workplaceSection._id, submitLoading]);
     return (
         <div className="card">
             <div className="card-body">
                 <h4 className="card-title">Workplace Page</h4>
                 <form className="mt-4" onSubmit={(e) => {
+
                     e.preventDefault();
-                    if (workplaceSection && workplaceSection._id) {
-                        updateLink();
+                    if (isNewItem) {
+                        createLink().then(({ data }) => {
+                            if (data && data.addAbout) {
+                                setworPlaceSection({ ...workplaceSection, _id: data.addAbout._id })
+                            }
+                        });
                     } else {
-                        createLink();
+                        updateLink();
                     }
                 }}>
                     {workplaceSection.workplace.map((input, index) => {
@@ -181,7 +204,6 @@ export const FormWorkplace: React.FC = () => {
                                                 className="form-control"
                                                 placeholder="Readmore link" />
                                         </div>
-                                        
                                         <div className="form-group col-6">
                                             {index === 0 ? <label>Contact Link</label> : null}
                                             <input type="url"
@@ -203,7 +225,7 @@ export const FormWorkplace: React.FC = () => {
                             </div>
                         )
                     })}
-                    <button type="submit" className="btn btn-primary">Submit</button>
+                    <button type="submit" disabled={submitLoading} className="btn btn-primary">Submit</button>
                 </form>
             </div>
         </div>
